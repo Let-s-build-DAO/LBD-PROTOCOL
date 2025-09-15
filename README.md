@@ -18,7 +18,7 @@ This project tracks transactions, decodes token transfers, enriches with USD val
 - **Next.js / React** — UI for explorers & dashboards
 - **Tailwind CSS** — modern styling
 - **Recharts / D3** — visualization of transactions & analytics
-- **React Query + Zustand
+- **React Query**
 
 ---
 
