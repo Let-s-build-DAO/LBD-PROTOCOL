@@ -21,5 +21,4 @@ export interface Transaction {
   tokenTransfers: TokenTransfer[];
   activityType: string;
   projectTag: string | undefined;
-  regionTags: string[];
 }

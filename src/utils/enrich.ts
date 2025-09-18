@@ -53,6 +53,5 @@ export async function enrichTx(txHash: string, chainKey: string): Promise<Transa
         tokenTransfers,
         activityType,
         projectTag: undefined,
-        regionTags: [],
     };
 }
