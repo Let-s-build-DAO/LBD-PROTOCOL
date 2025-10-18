@@ -1,4 +1,3 @@
-// src/models/transaction.ts
 import mongoose, { Schema, Document } from "mongoose";
 
 export interface ITransaction extends Document {
@@ -7,23 +6,21 @@ export interface ITransaction extends Document {
   contract: string;
   blockNumber: number;
   timestamp: number;
-  project?: string;
-  isTestnet: boolean;
+  isTestnet?: boolean;
+  userId?: string; // 🔑 add this for user filtering
 }
 
-const TransactionSchema = new Schema<ITransaction>(
-  {
-    txHash: { type: String, required: true, unique: true },
-    chain: { type: String, required: true },
-    contract: { type: String, required: true },
-    blockNumber: { type: Number, required: true },
-    timestamp: { type: Number, required: true },
-    project: { type: String },
-    isTestnet: { type: Boolean, required: true },
-  },
-  { timestamps: true }
-);
+const TransactionSchema = new Schema<ITransaction>({
+  txHash: { type: String, required: true },
+  chain: { type: String, required: true },
+  contract: { type: String, required: true },
+  blockNumber: { type: Number, required: true },
+  timestamp: { type: Number, required: true },
+  isTestnet: { type: Boolean, default: false },
+  userId: { type: String },
+});
 
-export const Transaction =
-  mongoose.models.Transaction ||
-  mongoose.model<ITransaction>("Transaction", TransactionSchema);
+export const Transaction = mongoose.model<ITransaction>(
+  "Transaction",
+  TransactionSchema
+);

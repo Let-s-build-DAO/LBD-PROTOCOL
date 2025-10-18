@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from "express";
-import { Contract } from "../models/contract";
+import { Contract } from "../models/Contract";
 
 export const addContract = async (req: Request, res: Response, next: NextFunction) => {
     try {

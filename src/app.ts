@@ -13,7 +13,7 @@ connectMongo()
 
 app.use("/api/auth", authRoutes);
 app.use("/api/contracts", contractRoutes);
-app.use('/api/transaction', transactionRoutes);
+app.use('/api/transactions', transactionRoutes);
 
 // Global Error Handler
 app.use(errorHandler);

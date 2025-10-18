@@ -1,14 +1,18 @@
-import express from 'express';
+import { Router } from "express";
 import {
-  createTransaction,
   getAllTransactions,
-  getTransactionByHash
-} from '../controllers/transactionsController';
+  getMainnetTransactions,
+  getTestnetTransactions,
+  getContractTransactions,
+  getUserTransactions,
+} from "../controllers/transactionsController";
 
-const router = express.Router();
+const router = Router();
 
-router.post('/', createTransaction);
-router.get('/', getAllTransactions);
-router.get('/:txHash', getTransactionByHash);
+router.get("/", getAllTransactions);
+router.get("/mainnet", getMainnetTransactions);
+router.get("/testnet", getTestnetTransactions);
+router.get("/contract/:contractAddress", getContractTransactions);
+router.get("/user/:userId", getUserTransactions);
 
 export default router;

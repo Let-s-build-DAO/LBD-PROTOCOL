@@ -1,6 +1,5 @@
 import { Request, Response, NextFunction } from "express";
 import { User } from "../models/User";
-import crypto from "crypto";
 import nodemailer from "nodemailer";
 
 export const sendOTP = async (req: Request, res: Response, next: NextFunction) => {
