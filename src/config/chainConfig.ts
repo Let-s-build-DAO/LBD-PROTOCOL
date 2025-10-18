@@ -1,4 +1,3 @@
-// src/config/chains.ts
 import * as allChains from "viem/chains";
 
 export type ChainConfig = {

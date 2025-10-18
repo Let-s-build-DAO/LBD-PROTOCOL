@@ -1,24 +1,29 @@
-export interface TokenTransfer {
-  token: string;
-  amount: string;
-  from: string;
-  to: string;
-  usdValue: number | undefined;
-}
+// src/models/transaction.ts
+import mongoose, { Schema, Document } from "mongoose";
 
-export interface Transaction {
+export interface ITransaction extends Document {
   txHash: string;
   chain: string;
+  contract: string;
   blockNumber: number;
-  timestamp: string;
-  fromAddr: string;
-  toAddr: string;
-  nativeValue: string;
-  nativeSymbol: string;
-  usdValue: number | undefined;
-  gasUsed: string;
-  gasFeeUsd: number | undefined;
-  tokenTransfers: TokenTransfer[];
-  activityType: string;
-  projectTag: string | undefined;
+  timestamp: number;
+  project?: string;
+  isTestnet: boolean;
 }
+
+const TransactionSchema = new Schema<ITransaction>(
+  {
+    txHash: { type: String, required: true, unique: true },
+    chain: { type: String, required: true },
+    contract: { type: String, required: true },
+    blockNumber: { type: Number, required: true },
+    timestamp: { type: Number, required: true },
+    project: { type: String },
+    isTestnet: { type: Boolean, required: true },
+  },
+  { timestamps: true }
+);
+
+export const Transaction =
+  mongoose.models.Transaction ||
+  mongoose.model<ITransaction>("Transaction", TransactionSchema);
