@@ -14,6 +14,7 @@ app.use(cors());
 connectMongo()
 // Routes
 
+
 app.use("/api/auth", authRoutes);
 app.use("/api/contracts", contractRoutes);
 app.use('/api/transactions', transactionRoutes);

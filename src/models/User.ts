@@ -6,7 +6,9 @@ export interface IUser extends Document {
     otpExpiresAt?: Date;
     orgName?: string;
     createdAt: Date;
-    description: string
+    description: string;
+    isVerified: Boolean;
+    hasSignedUp: Boolean;
 }
 
 const userSchema = new Schema<IUser>({
@@ -16,6 +18,8 @@ const userSchema = new Schema<IUser>({
     description: {type: String},
     orgName: { type: String },
     createdAt: { type: Date, default: Date.now },
+    isVerified: { type: Boolean, default: false },
+    hasSignedUp: { type: Boolean, default: false },
 });
 
 export const User = mongoose.model<IUser>("User", userSchema);

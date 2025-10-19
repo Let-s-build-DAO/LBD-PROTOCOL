@@ -6,13 +6,14 @@ import {
   getContractTransactions,
   getUserTransactions,
 } from "../controllers/transactionsController";
+import { authenticate } from "../middlewares/authMiddleware";
 
 const router = Router();
 
 router.get("/", getAllTransactions);
 router.get("/mainnet", getMainnetTransactions);
 router.get("/testnet", getTestnetTransactions);
-router.get("/contract/:contractAddress", getContractTransactions);
-router.get("/user/:userId", getUserTransactions);
+router.get("/contract/:contractAddress", authenticate, getContractTransactions);
+router.get("/user/:userId", authenticate, getUserTransactions);
 
 export default router;
