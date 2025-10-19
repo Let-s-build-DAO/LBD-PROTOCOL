@@ -1,5 +1,5 @@
 // src/lib/saveTxDecentralized.ts
-import { Transaction } from "../models/transaction";
+import { Transaction } from "../models/Transaction";
 import { chains } from "../config/chainConfig";
 
 interface TxData {

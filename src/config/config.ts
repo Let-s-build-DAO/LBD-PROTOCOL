@@ -5,11 +5,13 @@ dotenv.config();
 interface Config {
   port: number;
   nodeEnv: string;
+  MONGO_URI: string
 }
 
 const config: Config = {
-  port: Number(process.env.PORT) || 3000,
+  port: Number(process.env.PORT) || 5000,
   nodeEnv: process.env.NODE_ENV || 'development',
+  MONGO_URI: process.env.MONGODB_URI || ''
 };
 
 export default config;

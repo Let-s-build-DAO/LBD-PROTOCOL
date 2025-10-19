@@ -28,7 +28,7 @@ export const sendOTP = async (req: Request, res: Response, next: NextFunction) =
         await transporter.sendMail({
             from: process.env.EMAIL_USER,
             to: email,
-            subject: "Your Login OTP",
+            subject: "Your OTP",
             text: `Your OTP is ${otp}. It expires in 10 minutes.`,
         });
 
@@ -58,8 +58,8 @@ export const verifyOTP = async (req: Request, res: Response, next: NextFunction)
 
 export const fillUserDetails = async (req: Request, res: Response, next: NextFunction) => {
     try {
-        const { email, name } = req.body;
-        const user = await User.findOneAndUpdate({ email }, { name }, { new: true });
+        const { email, orgName, description } = req.body;
+        const user = await User.findOneAndUpdate({ email }, { orgName, description }, { new: true });
         if (!user) return res.status(404).json({ message: "User not found" });
 
         res.json({ success: true, user });

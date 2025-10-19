@@ -4,15 +4,17 @@ export interface IUser extends Document {
     email: string;
     otp?: string;
     otpExpiresAt?: Date;
-    name?: string;
+    orgName?: string;
     createdAt: Date;
+    description: string
 }
 
 const userSchema = new Schema<IUser>({
     email: { type: String, required: true, unique: true, lowercase: true },
     otp: { type: String },
     otpExpiresAt: { type: Date },
-    name: { type: String },
+    description: {type: String},
+    orgName: { type: String },
     createdAt: { type: Date, default: Date.now },
 });
 

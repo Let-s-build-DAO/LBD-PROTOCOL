@@ -1,4 +1,5 @@
 import express from 'express';
+import cors from 'cors';
 import { errorHandler } from './middlewares/errorHandler';
 import transactionRoutes from './routes/transactions';
 import { manageContractWatchers } from './utils/contractWatcher';
@@ -8,6 +9,8 @@ import { connectMongo } from './config/mongo';
 
 const app = express();
 app.use(express.json());
+app.use(cors());
+
 connectMongo()
 // Routes
 
