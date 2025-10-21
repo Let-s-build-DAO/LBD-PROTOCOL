@@ -39,6 +39,10 @@ export async function manageContractWatchers() {
         }
 
         const client = await getClient(contract.chain);
+        if (!client) {
+            console.warn(`⚠️ Skipping ${contract.chain}:${contract.address} — no valid client`);
+            continue;
+        }
         console.log(`👁️ Watching ALL transactions for ${contract.address} on ${contract.chain}`);
 
         // ✅ Watch blocks and scan for txs touching this contract

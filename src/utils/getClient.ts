@@ -1,86 +1,55 @@
-// src/lib/getClient.ts
-import { createPublicClient, http, PublicClient } from "viem";
+import { createPublicClient, http } from "viem";
 import { chains } from "../config/chainConfig";
 
-const clientPool: Record<string, PublicClient> = {};
-const rpcIndex: Record<string, number> = {};
-const reconnectTimers: Record<string, NodeJS.Timeout> = {};
+const RETRY_LIMIT = 3;
+const RETRY_DELAY_BASE = 5000; // 5 seconds
 
-const RETRY_INTERVAL_MS = 60_000; // 1 min retry
+// Utility: sleep helper
+const sleep = (ms: number) => new Promise((res) => setTimeout(res, ms));
 
-function getNextRpc(chainKey: string): string {
+export async function getClient(chainKey: string) {
   const config = chains[chainKey];
   if (!config) throw new Error(`Unsupported chain: ${chainKey}`);
 
-  rpcIndex[chainKey] = (rpcIndex[chainKey] ?? 0) % config.rpcUrls.length;
-  const rpc = config.rpcUrls[rpcIndex[chainKey]];
-  rpcIndex[chainKey] = (rpcIndex[chainKey] + 1) % config.rpcUrls.length;
-  return rpc;
-}
+  const rpcUrls = config.rpcUrls;
+  let lastError: any = null;
 
-async function tryCreateClient(chainKey: string): Promise<PublicClient | null> {
-  const config = chains[chainKey];
-  if (!config) throw new Error(`Unsupported chain: ${chainKey}`);
-
-  let rpcUrl = getNextRpc(chainKey);
-  let attempts = 0;
-
-  while (attempts < config.rpcUrls.length) {
-    try {
-      const client = createPublicClient({
-        chain: {
-          id: config.id,
-          name: config.name,
-          nativeCurrency: config.nativeCurrency ?? {
-            name: "Ether",
-            symbol: "ETH",
-            decimals: 18,
+  for (let attempt = 1; attempt <= RETRY_LIMIT; attempt++) {
+    for (const rpc of rpcUrls) {
+      try {
+        const client = createPublicClient({
+          chain: {
+            id: config.id,
+            name: config.name,
+            nativeCurrency: config.nativeCurrency ?? {
+              name: "Ether",
+              symbol: "ETH",
+              decimals: 18,
+            },
+            rpcUrls: { default: { http: config.rpcUrls } },
           },
-          rpcUrls: { default: { http: config.rpcUrls } },
-        },
-        transport: http(rpcUrl),
-      });
+          transport: http(rpc),
+        });
 
-      await client.getBlockNumber(); // Health check
-      console.log(
-        `✅ Connected to ${config.name} (${config.isTestnet ? "Testnet" : "Mainnet"}) via ${rpcUrl}`
-      );
-      return client;
-    } catch (err) {
-      console.warn(`⚠️ RPC failed for ${config.name} (${rpcUrl}): ${String(err)}`);
-      rpcUrl = getNextRpc(chainKey);
-      attempts++;
+        // Quick test to verify connectivity
+        await client.getBlockNumber();
+
+        console.log(`✅ Connected to ${config.name} via ${rpc}`);
+        return client;
+      } catch (err: any) {
+        console.warn(`❌ RPC failed for ${config.name} via ${rpc}: ${err.message}`);
+        lastError = err;
+      }
     }
+
+    // If all RPCs failed, wait before retrying
+    const delay = RETRY_DELAY_BASE * attempt;
+    console.log(
+      `🔄 All RPCs failed for ${config.name}, retrying in ${delay / 1000}s (attempt ${attempt}/${RETRY_LIMIT})...`
+    );
+    await sleep(delay);
   }
 
-  console.error(`❌ All RPCs failed for ${config.name}`);
-  return null;
-}
-
-async function scheduleReconnect(chainKey: string) {
-  if (reconnectTimers[chainKey]) return; // already scheduled
-
-  console.log(`🔄 Scheduling reconnection for ${chainKey}...`);
-  reconnectTimers[chainKey] = setInterval(async () => {
-    const client = await tryCreateClient(chainKey);
-    if (client) {
-      clientPool[chainKey] = client;
-      clearInterval(reconnectTimers[chainKey]);
-      delete reconnectTimers[chainKey];
-      console.log(`✅ Reconnected successfully to ${chainKey}`);
-    }
-  }, RETRY_INTERVAL_MS);
-}
-
-export async function getClient(chainKey: string): Promise<PublicClient> {
-  if (clientPool[chainKey]) return clientPool[chainKey];
-
-  const client = await tryCreateClient(chainKey);
-  if (!client) {
-    await scheduleReconnect(chainKey);
-    throw new Error(`All RPCs failed for ${chainKey}, retrying in background.`);
-  }
-
-  clientPool[chainKey] = client;
-  return client;
+  console.error(`❌ All RPCs failed permanently for ${config.name}. Skipping connection.`);
+  return null; // return null instead of throwing to prevent crash
 }
