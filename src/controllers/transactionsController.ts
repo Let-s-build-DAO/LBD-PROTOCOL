@@ -1,5 +1,6 @@
-import { Request, Response } from "express";
+import { Request, Response, NextFunction } from "express";
 import { Transaction } from "../models/Transaction";
+import { AuthenticatedRequest } from "../middlewares/authMiddleware";
 
 /**
  * GET /api/transactions
@@ -65,14 +66,17 @@ export const getContractTransactions = async (req: Request, res: Response) => {
  * GET /api/transactions/user/:userId
  * Returns all transactions for a specific user
  */
-export const getUserTransactions = async (req: Request, res: Response) => {
+export const getUserTransactions = async (req: AuthenticatedRequest, res: Response, next: NextFunction,) => {
     try {
-        const { userId } = req.params;
+        const userId = req.user?.id;
+
+        if (!userId) {
+            return res.status(401).json({ success: false, message: "Unauthorized" });
+        }
         const transactions = await Transaction.find({ userId }).sort({ timestamp: -1 });
 
         res.status(200).json(transactions);
-    } catch (err) {
-        console.error("❌ Error fetching user transactions:", err);
-        res.status(500).json({ message: "Internal server error" });
+    } catch (error) {
+        next(error);
     }
 };

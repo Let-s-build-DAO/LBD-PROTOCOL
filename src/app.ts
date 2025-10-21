@@ -24,5 +24,5 @@ app.use(errorHandler);
 
 // 🚀 Start background watcher service
 setInterval(manageContractWatchers, 60_000); // run every 60 seconds
-
+// manageContractWatchers()
 export default app;

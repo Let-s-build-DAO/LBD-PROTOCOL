@@ -1,8 +1,8 @@
-import { Log } from "viem";
-import { chains } from "../config/chainConfig";
-import { saveTxDecentralized } from "./saveTxDecentralized";
+import { Log, createPublicClient, http } from "viem";
 import { getClient } from "./getClient";
+import { saveTxDecentralized } from "./saveTxDecentralized";
 import { Contract, IContract } from "../models/Contract";
+import { chains } from "../config/chainConfig";
 
 type ActiveWatcher = {
     unwatch: () => void;
@@ -12,70 +12,76 @@ type ActiveWatcher = {
 const activeWatchers: Record<string, ActiveWatcher> = {};
 
 export async function manageContractWatchers() {
-    try {
-        // 1️⃣ Fetch all active contracts from MongoDB
-        const contracts: IContract[] = await Contract.find({ status: "active" });
+    const contracts: IContract[] = await Contract.find({ status: "active" });
 
-        const activeKeys = new Set(
-            contracts.map((c) => `${c.chain}:${c.address.toLowerCase()}`)
-        );
+    const activeKeys = new Set(
+        contracts.map((c) => `${c.chain}:${c.address.toLowerCase()}`)
+    );
 
-        // 2️⃣ Remove inactive watchers
-        for (const key of Object.keys(activeWatchers)) {
-            if (!activeKeys.has(key)) {
-                console.log(`🛑 Removing watcher for ${key}`);
-                activeWatchers[key].unwatch();
-                delete activeWatchers[key];
-            }
+    // 🧹 Clean up inactive watchers
+    for (const key of Object.keys(activeWatchers)) {
+        if (!activeKeys.has(key)) {
+            console.log(`🛑 Removing watcher for ${key}`);
+            activeWatchers[key].unwatch();
+            delete activeWatchers[key];
+        }
+    }
+
+    // 👀 Start watchers for active contracts
+    for (const contract of contracts) {
+        const key = `${contract.chain}:${contract.address.toLowerCase()}`;
+        if (activeWatchers[key]) continue;
+
+        const chainConfig = chains[contract.chain];
+        if (!chainConfig) {
+            console.warn(`⚠️ Unsupported chain: ${contract.chain}`);
+            continue;
         }
 
-        // 3️⃣ Create watchers for new contracts
-        for (const contract of contracts) {
-            const key = `${contract.chain}:${contract.address.toLowerCase()}`;
-            if (activeWatchers[key]) continue;
+        const client = await getClient(contract.chain);
+        console.log(`👁️ Watching ALL transactions for ${contract.address} on ${contract.chain}`);
 
-            const chainConfig = chains[contract.chain];
-            if (!chainConfig) {
-                console.warn(`⚠️ Unsupported chain: ${contract.chain}`);
-                continue;
-            }
+        // ✅ Watch blocks and scan for txs touching this contract
+        const unwatch = client.watchBlocks({
+            onBlock: async (block) => {
+                if (!block?.transactions?.length) return;
 
-            const client = await getClient(contract.chain);
-            console.log(
-                `👀 Starting watcher for ${contract._id} (${key})`
-            );
+                for (const txHash of block.transactions) {
+                    try {
+                        const tx = await client.getTransaction({ hash: txHash });
 
-            const unwatch = client.watchEvent({
-                address: contract.address as `0x${string}`,
-                onLogs: async (logs: Log[]) => {
-                    for (const log of logs) {
-                        if (!log.transactionHash) continue;
+                        // 🧠 Check if the contract is involved (as sender or receiver)
+                        if (
+                            tx.to?.toLowerCase() === contract.address.toLowerCase() ||
+                            tx.from.toLowerCase() === contract.address.toLowerCase()
+                        ) {
+                            const txData = {
+                                txHash,
+                                chain: contract.chain,
+                                contract: contract.address,
+                                blockNumber: Number(block.number),
+                                timestamp: Number(block.timestamp) * 1000,
+                                isTestnet: chainConfig.isTestnet || false,
+                                userId: contract.userId,
+                            };
 
-                        const txData = {
-                            txHash: log.transactionHash,
-                            chain: contract.chain,
-                            contract: contract.address,
-                            blockNumber: log.blockNumber ? Number(log.blockNumber) : 0,
-                            timestamp: Date.now(),
-                            isTestnet: chainConfig.isTestnet || false,
-                            userId: contract.userId, // ✅ add user ID from contract
-                        };
-
-                        try {
                             await saveTxDecentralized(txData);
                             if (activeWatchers[key]) {
                                 activeWatchers[key].lastActive = Date.now();
                             }
-                        } catch (err) {
-                            console.error("❌ Error saving transaction:", err);
-                        }
-                    }
-                },
-            });
 
-            activeWatchers[key] = { unwatch, lastActive: Date.now() };
-        }
-    } catch (error) {
-        console.error("❌ Error managing contract watchers:", error);
+                            console.log(`📦 Tx found for ${contract.address}: ${txHash}`);
+                        }
+                    } catch (err) {
+                        console.error(`⚠️ Error fetching transaction ${txHash}:`, err);
+                    }
+                }
+            },
+            onError: (err) => {
+                console.error(`❌ Watcher error for ${contract.address}:`, err);
+            },
+        });
+
+        activeWatchers[key] = { unwatch, lastActive: Date.now() };
     }
 }

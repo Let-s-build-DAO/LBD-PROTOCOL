@@ -7,7 +7,7 @@ export interface ITransaction extends Document {
   blockNumber: number;
   timestamp: number;
   isTestnet?: boolean;
-  userId?: string; // 🔑 add this for user filtering
+  userId: mongoose.Types.ObjectId;
 }
 
 const TransactionSchema = new Schema<ITransaction>({
@@ -17,7 +17,7 @@ const TransactionSchema = new Schema<ITransaction>({
   blockNumber: { type: Number, required: true },
   timestamp: { type: Number, required: true },
   isTestnet: { type: Boolean, default: false },
-  userId: { type: String },
+  userId: { type: Schema.Types.ObjectId, ref: "User", required: true },
 });
 
 export const Transaction = mongoose.model<ITransaction>(

@@ -1,4 +1,3 @@
-// src/lib/saveTxDecentralized.ts
 import { Transaction } from "../models/Transaction";
 import { chains } from "../config/chainConfig";
 
@@ -9,6 +8,7 @@ interface TxData {
     blockNumber: bigint | number;
     timestamp: number;
     project?: string;
+    userId: any;
 }
 
 export async function saveTxDecentralized(data: TxData) {
@@ -32,6 +32,7 @@ export async function saveTxDecentralized(data: TxData) {
             timestamp: data.timestamp,
             project: data.project ?? "Unknown",
             isTestnet: chainConfig.isTestnet,
+            userId: data.userId
         });
 
         await tx.save();

@@ -14,6 +14,6 @@ router.get("/", getAllTransactions);
 router.get("/mainnet", getMainnetTransactions);
 router.get("/testnet", getTestnetTransactions);
 router.get("/contract/:contractAddress", authenticate, getContractTransactions);
-router.get("/user/:userId", authenticate, getUserTransactions);
+router.get("/user", authenticate, getUserTransactions);
 
 export default router;
