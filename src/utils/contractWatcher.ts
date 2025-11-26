@@ -1,4 +1,3 @@
-import { Log, createPublicClient, http } from "viem";
 import { getClient } from "./getClient";
 import { saveTxDecentralized } from "./saveTxDecentralized";
 import { Contract, IContract } from "../models/Contract";
